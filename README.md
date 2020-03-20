@@ -25,3 +25,6 @@ Enables simplified names for functions e.g. `OCR_class` — `class`. `OCR_free`,
 `OCR_call(class, name, ..)` - Calls method from class.
 
 `OCR_init(type, ...)`, `OCR_init_dyn(type, ...)` - Creates instance of class.
+
+## Used libraries
+[uthash](https://github.com/troydhanson/uthash) - Amazing hashmap library!
