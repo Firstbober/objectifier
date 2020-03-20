@@ -69,7 +69,7 @@ void OCR_add_struct(char *identifier, void *st, void *destructor,
 #define OCR_init_dyn(st, ...) OCR_init_internal(st, true, ##__VA_ARGS__)
 
 #define OCR_method(type, name, ...) type (*name)(void *this, ##__VA_ARGS__)
-#define OCR_memberize(st, st_name, name) st->name = st_name##_##name;
+#define OCR_memberize(st, st_name, name) st->name = ns_##st_name##_##name;
 #define OCR_call(st, name, ...) st->name(st, ##__VA_ARGS__)
 
 void OCR_free_all() {
@@ -104,18 +104,20 @@ void OCR_free(void *st) {
   }
 }
 
-void OCR_dyn_clear() {
-  OCR_Master *storage;
-  for (storage = OCR_Manager; storage != NULL;
-       storage = (OCR_Master *)storage->hh.next) {
+void OCR_dyn_clear(char *source) {
+  if (strncmp(source, "ns_", strlen(source)) == 0) {
+    OCR_Master *storage;
+    for (storage = OCR_Manager; storage != NULL;
+         storage = (OCR_Master *)storage->hh.next) {
 
-    if (storage->container.dynamic == true) {
-      if (storage->container.destructor != NULL) {
-        storage->container.destructor();
+      if (storage->container.dynamic == true) {
+        if (storage->container.destructor != NULL) {
+          storage->container.destructor();
+        }
+        free(storage->container._struct);
+        HASH_DEL(OCR_Manager, storage);
+        free(storage);
       }
-      free(storage->container._struct);
-      HASH_DEL(OCR_Manager, storage);
-      free(storage);
     }
   }
 }
@@ -126,7 +128,7 @@ void OCR_dyn_clear() {
 
 #ifndef OCR_DISABLE_SCOPING
 #define return                                                                 \
-  OCR_dyn_clear();                                                             \
+  OCR_dyn_clear(__func__);                                                     \
   return
 #endif
 

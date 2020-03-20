@@ -7,7 +7,7 @@ class(printer) {
   method(void, print);
 };
 
-void printer_print(printer *this) {
+void ns_printer_print(printer *this) {
   printf("Printing... Printed: %s\n", this->text);
 }
 void printer_constructor(printer *this) {
