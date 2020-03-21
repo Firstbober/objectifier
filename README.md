@@ -2,7 +2,7 @@
 Objective programming in C!
 
 ## How to install
-Just copy `uthash.h` and `objectifier.h` to your source directory and include `objectifier.h`
+Just copy `objectifier` directory to your source directory and include `objectifier.h` and add `objectifier.c` to the files you compile.
 
 ## Documentation
 ```c

@@ -1,5 +1,5 @@
 #define OCR_SIMPLY_NAMES
-#include "objecitifier.h"
+#include "objectifier/objecitifier.h"
 #include <stdio.h>
 
 class(printer) {

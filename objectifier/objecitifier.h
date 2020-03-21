@@ -28,8 +28,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef OBJECTIFIER_H
 #define OBJECTIFIER_H
-
-#include "uthash.h"
+#include "uthash_structs.h"
 #include <stdbool.h>
 
 typedef struct {
@@ -45,20 +44,10 @@ typedef struct {
   UT_hash_handle hh;
 } OCR_Master;
 
-OCR_Master *OCR_Manager = NULL;
+extern OCR_Master *OCR_Manager;
 
 void OCR_add_struct(char *identifier, void *st, void *destructor, bool dynamic,
-                    const char *source) {
-  OCR_Master *storage;
-
-  storage = (OCR_Master *)malloc(sizeof(OCR_Master));
-  storage->identifier = identifier;
-  storage->container = (OCR_Master_STContainer){._struct = st,
-                                                .destructor = destructor,
-                                                .dynamic = dynamic,
-                                                .source_func = source};
-  HASH_ADD_STR(OCR_Manager, identifier, storage);
-}
+                    const char *source);
 
 #define OCR_init_internal(st, dyn, ...)                                        \
   ({                                                                           \
@@ -75,60 +64,9 @@ void OCR_add_struct(char *identifier, void *st, void *destructor, bool dynamic,
 #define OCR_memberize(st, st_name, name) st->name = (void *)st_name##_##name;
 #define OCR_call(st, name, ...) st->name(st, ##__VA_ARGS__)
 
-void OCR_free_all() {
-  OCR_Master *storage;
-  for (storage = OCR_Manager; storage != NULL;
-       storage = (OCR_Master *)storage->hh.next) {
-
-    if (storage->container.destructor != NULL) {
-      storage->container.destructor();
-    }
-
-    free(storage->container._struct);
-    HASH_DEL(OCR_Manager, storage);
-    free(storage);
-  }
-}
-
-void OCR_free(void *st) {
-  OCR_Master *storage;
-  for (storage = OCR_Manager; storage != NULL;
-       storage = (OCR_Master *)storage->hh.next) {
-
-    if (storage->container._struct == st) {
-      if (storage->container.destructor != NULL) {
-        storage->container.destructor();
-      }
-
-      free(storage->container._struct);
-      HASH_DEL(OCR_Manager, storage);
-      free(storage);
-    }
-  }
-}
-
-void OCR_dyn_clear(const char *source, void *returned) {
-  if (strcmp(source, "main") == 0) {
-    OCR_free_all();
-  } else {
-    OCR_Master *storage;
-    for (storage = OCR_Manager; storage != NULL;
-         storage = (OCR_Master *)storage->hh.next) {
-
-      if (storage->container.dynamic == true &&
-          storage->container._struct != returned &&
-          storage->container.source_func == source) {
-        printf("deleted in: %s\n", source);
-        if (storage->container.destructor != NULL) {
-          storage->container.destructor();
-        }
-        free(storage->container._struct);
-        HASH_DEL(OCR_Manager, storage);
-        free(storage);
-      }
-    }
-  }
-}
+void OCR_free_all();
+void OCR_free(void *st);
+void OCR_dyn_clear(const char *source, void *returned);
 
 #define OCR_class(name)                                                        \
   typedef struct name name;                                                    \
