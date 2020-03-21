@@ -6,10 +6,6 @@ Just copy `uthash.h` and `objectifier.h` to your source directory and include `o
 
 ## Documentation
 ```c
-#define OCR_DISABLE_SCOPING
-```
-Disables deleting classes on scope end.
-```c
 #define OCR_SIMPLY_NAMES
 ```
 Enables simplified names for functions e.g. `OCR_class` — `class`. `OCR_free`, `OCR_free_all` and internal names were not simplified.
@@ -25,6 +21,8 @@ Enables simplified names for functions e.g. `OCR_class` — `class`. `OCR_free`,
 `OCR_call(class, name, ..)` - Calls method from class.
 
 `OCR_init(type, ...)`, `OCR_init_dyn(type, ...)` - Creates instance of class.
+
+`OCR_return(variable)` - Executes collector and returns variable like standard return.
 
 ## Used libraries
 [uthash](https://github.com/troydhanson/uthash) - Amazing hashmap library!

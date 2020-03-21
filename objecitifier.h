@@ -36,6 +36,7 @@ typedef struct {
   void *_struct;
   void (*destructor)();
   bool dynamic;
+  const char *source_func;
 } OCR_Master_STContainer;
 
 typedef struct {
@@ -46,21 +47,23 @@ typedef struct {
 
 OCR_Master *OCR_Manager = NULL;
 
-void OCR_add_struct(char *identifier, void *st, void *destructor,
-                    bool dynamic) {
+void OCR_add_struct(char *identifier, void *st, void *destructor, bool dynamic,
+                    const char *source) {
   OCR_Master *storage;
 
   storage = (OCR_Master *)malloc(sizeof(OCR_Master));
   storage->identifier = identifier;
-  storage->container = (OCR_Master_STContainer){
-      ._struct = st, .destructor = destructor, .dynamic = dynamic};
+  storage->container = (OCR_Master_STContainer){._struct = st,
+                                                .destructor = destructor,
+                                                .dynamic = dynamic,
+                                                .source_func = source};
   HASH_ADD_STR(OCR_Manager, identifier, storage);
 }
 
 #define OCR_init_internal(st, dyn, ...)                                        \
   ({                                                                           \
     st *_struct = malloc(sizeof(st));                                          \
-    OCR_add_struct((void *)_struct, _struct, st##_destructor, dyn);            \
+    OCR_add_struct((void *)_struct, _struct, st##_destructor, dyn, __func__);  \
     st##_constructor(_struct, ##__VA_ARGS__);                                  \
     _struct;                                                                   \
   })
@@ -69,7 +72,7 @@ void OCR_add_struct(char *identifier, void *st, void *destructor,
 #define OCR_init_dyn(st, ...) OCR_init_internal(st, true, ##__VA_ARGS__)
 
 #define OCR_method(type, name, ...) type (*name)(void *this, ##__VA_ARGS__)
-#define OCR_memberize(st, st_name, name) st->name = ns_##st_name##_##name;
+#define OCR_memberize(st, st_name, name) st->name = (void *)st_name##_##name;
 #define OCR_call(st, name, ...) st->name(st, ##__VA_ARGS__)
 
 void OCR_free_all() {
@@ -104,13 +107,18 @@ void OCR_free(void *st) {
   }
 }
 
-void OCR_dyn_clear(char *source) {
-  if (strncmp(source, "ns_", strlen(source)) == 0) {
+void OCR_dyn_clear(const char *source, void *returned) {
+  if (strcmp(source, "main") == 0) {
+    OCR_free_all();
+  } else {
     OCR_Master *storage;
     for (storage = OCR_Manager; storage != NULL;
          storage = (OCR_Master *)storage->hh.next) {
 
-      if (storage->container.dynamic == true) {
+      if (storage->container.dynamic == true &&
+          storage->container._struct != returned &&
+          storage->container.source_func == source) {
+        printf("deleted in: %s\n", source);
         if (storage->container.destructor != NULL) {
           storage->container.destructor();
         }
@@ -126,11 +134,9 @@ void OCR_dyn_clear(char *source) {
   typedef struct name name;                                                    \
   struct name
 
-#ifndef OCR_DISABLE_SCOPING
-#define return                                                                 \
-  OCR_dyn_clear(__func__);                                                     \
-  return
-#endif
+#define OCR_return(r)                                                          \
+  OCR_dyn_clear(__func__, r);                                                  \
+  return r;
 
 #ifdef OCR_SIMPLY_NAMES
 
@@ -140,6 +146,7 @@ void OCR_dyn_clear(char *source) {
 #define init OCR_init
 #define init_dyn OCR_init_dyn
 #define call OCR_call
+#define return(r) OCR_return(r)
 
 #endif
 
